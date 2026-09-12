@@ -12,10 +12,12 @@ import TrailerModal from './components/TrailerModal';
 import WishlistView from './components/WishlistView';
 import CollectionsView from './components/CollectionsView';
 import SurpriseMeModal from './components/SurpriseMeModal';
+import MobileBottomNav from './components/MobileBottomNav';
+import ViewModeToggle from './components/ViewModeToggle';
 import Toast from './components/Toast';
-import { Film } from 'lucide-react';
+import { Film, Smartphone, Monitor, RotateCw } from 'lucide-react';
 
-function MovieAppContent() {
+function MovieAppContent({ viewMode, setViewMode }) {
   // Navigation & View State
   const [activeTab, setActiveTab] = useState('discover'); // 'discover' | 'collections' | 'wishlist'
   const [selectedMovieId, setSelectedMovieId] = useState(null);
@@ -179,19 +181,23 @@ function MovieAppContent() {
     setActiveTab('discover');
   };
 
+  const isMobile = viewMode === 'mobile';
+
   return (
-    <div className="app-layout">
-      {/* Top Navbar with brand, search, Surprise Me button, and tabs */}
+    <div className={`app-layout ${isMobile ? 'is-mobile-view' : 'is-desktop-view'}`}>
+      {/* Top Navbar with brand, search, view toggle, Surprise Me button, and tabs */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onOpenSurpriseMe={() => setIsSurpriseOpen(true)}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
       />
 
       {/* Main Content View */}
-      <main>
+      <main className="main-content-area">
         {activeTab === 'wishlist' ? (
           /* Wishlist View */
           <WishlistView
@@ -293,6 +299,15 @@ function MovieAppContent() {
         )}
       </main>
 
+      {/* Mobile Bottom Dock Navigation Bar (Shown in Mobile View) */}
+      {isMobile && (
+        <MobileBottomNav
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onOpenSurpriseMe={() => setIsSurpriseOpen(true)}
+        />
+      )}
+
       {/* Surprise Me / Movie Roulette Modal */}
       <SurpriseMeModal
         isOpen={isSurpriseOpen}
@@ -325,13 +340,13 @@ function MovieAppContent() {
       {/* Footer */}
       <footer className="footer">
         <div className="container footer-inner">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             <Film size={18} color="var(--accent-amber)" />
             <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Trackzio Cinema</span>
-            <span>&copy; {new Date().getFullYear()} — Next-Gen Movie Discovery</span>
+            <span>&copy; {new Date().getFullYear()}</span>
           </div>
-          <div>
-            120+ Curated Titles &bull; Movie Roulette &bull; Vibe Discovery &bull; Cinema DNA &bull; Where to Watch
+          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+            120+ Curated Titles &bull; Roulette &bull; Vibe Discovery &bull; Cinema DNA
           </div>
         </div>
       </footer>
@@ -340,9 +355,102 @@ function MovieAppContent() {
 }
 
 export default function App() {
+  const [viewMode, setViewMode] = useState(() => {
+    try {
+      return localStorage.getItem('trackzio_view_mode') || 'desktop';
+    } catch {
+      return 'desktop';
+    }
+  });
+
+  const [orientation, setOrientation] = useState('portrait'); // 'portrait' | 'landscape'
+
+  const handleSetViewMode = (mode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem('trackzio_view_mode', mode);
+    } catch (err) {
+      console.warn('Could not persist view mode:', err);
+    }
+  };
+
+  const toggleOrientation = () => {
+    setOrientation((prev) => (prev === 'portrait' ? 'landscape' : 'portrait'));
+  };
+
   return (
     <WishlistProvider>
-      <MovieAppContent />
+      {viewMode === 'mobile' ? (
+        <div className="mobile-simulator-wrapper">
+          {/* Top Simulator Control Bar */}
+          <div className="simulator-control-bar">
+            <div className="simulator-bar-left">
+              <div className="simulator-device-badge">
+                <Smartphone size={16} />
+                <span>
+                  Mobile Preview &bull; {orientation === 'portrait' ? 'iPhone 15 Pro (412 × 860)' : 'Landscape (860 × 480)'}
+                </span>
+              </div>
+            </div>
+
+            <div className="simulator-bar-center">
+              <button
+                type="button"
+                className="btn-simulator-rotate"
+                onClick={toggleOrientation}
+                title={`Rotate to ${orientation === 'portrait' ? 'Landscape' : 'Portrait'}`}
+              >
+                <RotateCw size={14} />
+                <span>Rotate</span>
+              </button>
+            </div>
+
+            <div className="simulator-bar-right">
+              <ViewModeToggle
+                viewMode={viewMode}
+                setViewMode={handleSetViewMode}
+                className="simulator-mode-toggle"
+              />
+              <button
+                type="button"
+                className="btn-exit-simulator"
+                onClick={() => handleSetViewMode('desktop')}
+                title="Return to full desktop view"
+              >
+                <Monitor size={15} />
+                <span>Desktop View</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Smartphone Frame Container */}
+          <div className={`smartphone-bezel ${orientation}`}>
+            {/* Dynamic Island / Top Camera Bezel */}
+            <div className="phone-dynamic-island">
+              <div className="phone-speaker-slit"></div>
+              <div className="phone-camera-lens"></div>
+            </div>
+
+            {/* Internal Smartphone Screen */}
+            <div className="smartphone-screen is-mobile-view">
+              <MovieAppContent
+                viewMode={viewMode}
+                setViewMode={handleSetViewMode}
+              />
+            </div>
+
+            {/* Home Swipe Indicator */}
+            <div className="phone-home-bar"></div>
+          </div>
+        </div>
+      ) : (
+        <div className="desktop-view is-desktop-view">
+          <MovieAppContent
+            viewMode={viewMode}
+            setViewMode={handleSetViewMode}
+          />
+        </div>
+      )}
     </WishlistProvider>
   );
 }

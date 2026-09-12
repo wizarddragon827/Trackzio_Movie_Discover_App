@@ -1,6 +1,7 @@
 import React from 'react';
 import { Film, Search, X, Heart, Compass, Award, Dices } from 'lucide-react';
 import { useWishlist } from '../context/WishlistContext';
+import ViewModeToggle from './ViewModeToggle';
 
 export default function Navbar({
   activeTab,
@@ -9,6 +10,8 @@ export default function Navbar({
   setSearchQuery,
   onSearchSubmit,
   onOpenSurpriseMe,
+  viewMode,
+  setViewMode,
 }) {
   const { wishlist } = useWishlist();
   const wishlistCount = wishlist.length;
@@ -48,7 +51,7 @@ export default function Navbar({
                 type="text"
                 id="movie-search-input"
                 className="search-input"
-                placeholder="Search 120+ movies by title, actor, director..."
+                placeholder="Search 120+ movies..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -75,6 +78,13 @@ export default function Navbar({
 
         {/* Navigation Actions */}
         <nav className="nav-actions">
+          {/* View Mode Switcher (Desktop vs Mobile) */}
+          <ViewModeToggle
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            className="navbar-view-toggle"
+          />
+
           {/* Surprise Me Roulette button */}
           <button
             className="btn-surprise-me-nav"
